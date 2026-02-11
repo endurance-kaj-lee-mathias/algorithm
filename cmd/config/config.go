@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/algorithm/internal/env"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/env"
 )
 
 type Config struct {
