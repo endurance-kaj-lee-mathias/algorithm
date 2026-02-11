@@ -63,7 +63,7 @@ func (s *service) ComputeStress(ctx context.Context, m domain.HealthMetric) (int
 				} else if sys >= 130 || dia >= 85 {
 					score += 20
 				} else if sys < 110 && dia < 70 {
-					score -= 5
+					score -= 10
 				}
 			}
 		}
