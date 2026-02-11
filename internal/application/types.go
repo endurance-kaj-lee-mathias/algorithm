@@ -7,6 +7,5 @@ import (
 )
 
 type Service interface {
-	Save(ctx context.Context, msg domain.HealthMetric) error
-	GetAll(ctx context.Context) ([]domain.HealthMetric, error)
+	ComputeStress(ctx context.Context, metric domain.HealthMetric) (int, error)
 }

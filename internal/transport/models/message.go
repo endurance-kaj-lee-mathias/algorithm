@@ -15,3 +15,7 @@ func ToModel(msg domain.HealthMetric) MessageModel {
 		BloodPressure:    msg.BloodPressure,
 	}
 }
+
+type StressModel struct {
+	Stress int `json:"stress"`
+}

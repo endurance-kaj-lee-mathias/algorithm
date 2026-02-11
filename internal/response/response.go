@@ -1,0 +1,31 @@
+package response
+
+import (
+	"encoding/json"
+	"errors"
+	"log/slog"
+	"net/http"
+)
+
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
+func Write(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if v == nil {
+		return
+	}
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		slog.Error("failed to encode response", "error", err)
+	}
+}
+
+func WriteError(w http.ResponseWriter, status int, err error) {
+	if err == nil {
+		status = http.StatusInternalServerError
+		err = errors.New("unknown error")
+	}
+	Write(w, status, errorResponse{Error: err.Error()})
+}
