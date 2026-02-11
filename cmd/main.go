@@ -4,11 +4,8 @@ import (
 	"log/slog"
 	"os"
 
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/cmd/config"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/application"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/transport"
-
 	"github.com/joho/godotenv"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/cmd/config"
 )
 
 func main() {
@@ -17,9 +14,7 @@ func main() {
 	}
 
 	cfg := config.LoadConfig()
-	svc := application.NewService()
-	h := transport.NewHandler(svc)
-	api := server{config: cfg, handler: h}
+	api := server{config: cfg}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
