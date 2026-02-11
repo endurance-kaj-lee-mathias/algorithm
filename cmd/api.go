@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	message "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal"
 )
 
 func (server *server) mount() http.Handler {
@@ -16,13 +17,14 @@ func (server *server) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(time.Minute))
 
+	handler := message.Wire()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
 		})
 	})
 
-	r.Post("/metrics", server.handler.CreateMessage)
+	r.Post("/metrics", handler.CreateMessage)
 
 	return r
 }

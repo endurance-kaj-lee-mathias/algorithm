@@ -14,6 +14,7 @@ func NewService() Service {
 	return &service{}
 }
 
+/* (Made with chatgpt as a temporary placeholder) */
 func (s *service) ComputeStress(ctx context.Context, m domain.HealthMetric) (int, error) {
 	score := 50
 

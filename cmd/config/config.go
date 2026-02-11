@@ -11,7 +11,7 @@ type Config struct {
 }
 
 func LoadConfig() Config {
-	port := env.Get("SERVER_PORT", "8080")
+	port := env.Get("SERVER_PORT", "8081")
 
 	return Config{
 		Port: fmt.Sprintf(":%s", port),
