@@ -14,7 +14,9 @@ func main() {
 	}
 
 	cfg := config.LoadConfig()
-	api := server{config: cfg}
+	idp := config.LoadIdp()
+
+	api := server{cfg, idp}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
