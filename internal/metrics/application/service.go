@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/domain"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/domain"
 )
 
 type service struct{}

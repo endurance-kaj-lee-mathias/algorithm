@@ -1,6 +1,8 @@
 package transport
 
-import "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/application"
+import (
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/application"
+)
 
 type Handler struct {
 	service application.Service
