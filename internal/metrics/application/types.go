@@ -9,3 +9,8 @@ import (
 type Service interface {
 	ComputeStress(ctx context.Context, metric domain.HealthMetric) (int, error)
 }
+type service struct{}
+
+func NewService() Service {
+	return &service{}
+}

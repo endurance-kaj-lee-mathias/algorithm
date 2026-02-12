@@ -8,12 +8,6 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/domain"
 )
 
-type service struct{}
-
-func NewService() Service {
-	return &service{}
-}
-
 /* (Made with chatgpt as a temporary placeholder) */
 func (s *service) ComputeStress(ctx context.Context, m domain.HealthMetric) (int, error) {
 	score := 50

@@ -4,20 +4,20 @@ import (
 	"net/http"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/domain"
-	request2 "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/request"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/request"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/transport/models"
 )
 
 func (h *Handler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 	var m models.MessageModel
-	if err := request2.Decode(r, &m); err != nil {
+	if err := request.Decode(r, &m); err != nil {
 		response.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
 	if m.HeartRate <= 0 && m.SleepTimeMinutes <= 0 && m.BloodPressure == "" {
-		response.WriteError(w, http.StatusBadRequest, request2.InvalidJSON)
+		response.WriteError(w, http.StatusBadRequest, request.InvalidJSON)
 		return
 	}
 
