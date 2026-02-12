@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/health"
 	message "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics"
 )
@@ -27,8 +28,17 @@ func (server *server) mount() http.Handler {
 		})
 	})
 
+	r.Group(func(r chi.Router) {
+		r.Use(auth.TokenAuthentication(server.idp))
+		r.Post("/metrics", handler.CreateMessage)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(auth.RequireRoles("admin", "therapist"))
+		r.Post("/metrics", handler.CreateMessage)
+	})
+
 	r.Get("/health", healthHandler.Health)
-	r.Post("/metrics", handler.CreateMessage)
 
 	return r
 }
