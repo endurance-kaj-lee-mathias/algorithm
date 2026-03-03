@@ -11,11 +11,11 @@ import (
 const minSamples = 12
 const epsilon = 1e-9
 
-var ErrNotEnoughSamples = errors.New("at least 12 samples are required")
+var NotEnoughSamples = errors.New("at least 12 samples are required")
 
 func (s *service) ComputeStress(_ context.Context, _ string, samples []domain.Sample) (domain.StressResult, error) {
 	if len(samples) < minSamples {
-		return domain.StressResult{}, ErrNotEnoughSamples
+		return domain.StressResult{}, NotEnoughSamples
 	}
 
 	hrs := make([]float64, len(samples))
@@ -74,7 +74,6 @@ func stddev(vals []float64, m float64) float64 {
 		sum += d * d
 	}
 
-	// Sample standard deviation (n-1)
 	return math.Sqrt(sum / float64(len(vals)-1))
 }
 

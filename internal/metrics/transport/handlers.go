@@ -54,7 +54,7 @@ func (h *Handler) ComputeStress(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.ComputeStress(r.Context(), body.UserID, samples)
 	if err != nil {
-		if errors.Is(err, application.ErrNotEnoughSamples) {
+		if errors.Is(err, application.NotEnoughSamples) {
 			response.WriteError(w, http.StatusUnprocessableEntity, err)
 			return
 		}

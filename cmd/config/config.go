@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/env"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/env"
 )
 
 type Config struct {
@@ -16,9 +16,9 @@ type Config struct {
 func LoadConfig() Config {
 	port := env.Get("SERVER_PORT", "8081")
 
-	apiKey, ok := env.GetOptional("API_KEY")
-	if !ok {
-		slog.Error("API_KEY is required but not set")
+	apiKey := env.Get("ALGO_API_KEY", "")
+	if apiKey == "" {
+		slog.Error("ALGO_API_KEY is not set, requests to this service will be rejected")
 		os.Exit(1)
 	}
 
