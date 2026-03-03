@@ -7,8 +7,9 @@ import (
 )
 
 type Service interface {
-	ComputeStress(ctx context.Context, metric domain.HealthMetric) (int, error)
+	ComputeStress(ctx context.Context, userID string, samples []domain.Sample) (domain.StressResult, error)
 }
+
 type service struct{}
 
 func NewService() Service {
