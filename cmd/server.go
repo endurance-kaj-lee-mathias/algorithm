@@ -6,5 +6,4 @@ import (
 
 type server struct {
 	config config.Config
-	idp    config.Idp
 }
