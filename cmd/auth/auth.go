@@ -18,8 +18,8 @@ type contextKey string
 
 const claimsKey contextKey = "claims"
 
-func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
-	var url = fmt.Sprintf(
+func Authenticate(config config.Idp) func(*http.Request) (jwt.MapClaims, error) {
+	url := fmt.Sprintf(
 		"%s/realms/%s/protocol/openid-connect/certs",
 		config.Url,
 		config.Realm,
@@ -27,23 +27,42 @@ func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
 
 	jwks := initialize(url, config.Refresh)
 
+	issuers := make([]string, len(config.Issuers))
+	for i, iss := range config.Issuers {
+		issuers[i] = fmt.Sprintf("%s/realms/%s", iss, config.Realm)
+	}
+
+	return func(r *http.Request) (jwt.MapClaims, error) {
+		token, err := extractToken(r)
+		if err != nil {
+			return nil, err
+		}
+
+		return validateToken(token, jwks, issuers, config.Client)
+	}
+}
+
+func AuthenticateClaims(config config.Idp) func(*http.Request) (*Claims, error) {
+	raw := Authenticate(config)
+	return func(r *http.Request) (*Claims, error) {
+		mapClaims, err := raw(r)
+		if err != nil {
+			return nil, err
+		}
+		c := claimsFromMap(mapClaims)
+		if c.Sub == "" {
+			return nil, ClaimsInvalid
+		}
+		return c, nil
+	}
+}
+
+func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
+	authenticate := Authenticate(config)
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := extractToken(r)
-
-			if err != nil {
-				response.WriteError(w, http.StatusUnauthorized, err)
-				return
-			}
-
-			var issuer = fmt.Sprintf(
-				"%s/realms/%s",
-				config.Url,
-				config.Realm,
-			)
-
-			claims, err := validateToken(token, jwks, issuer, config.Client)
-
+			claims, err := authenticate(r)
 			if err != nil {
 				response.WriteError(w, http.StatusUnauthorized, err)
 				return
@@ -91,9 +110,9 @@ func extractToken(request *http.Request) (string, error) {
 	return token, nil
 }
 
-func validateToken(tokenString string, jwks *keyfunc.JWKS, issuer, audience string) (jwt.MapClaims, error) {
+func validateToken(tokenString string, jwks *keyfunc.JWKS, issuers []string, audience string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, jwks.Keyfunc,
-		jwt.WithIssuer(issuer),
+		jwt.WithAudience(audience),
 		jwt.WithValidMethods([]string{"RS256"}),
 	)
 
@@ -110,17 +129,36 @@ func validateToken(tokenString string, jwks *keyfunc.JWKS, issuer, audience stri
 		return nil, ClaimsInvalid
 	}
 
-	azp, ok := claims["azp"].(string)
-	if !ok || azp != audience {
-		return nil, ClaimsInvalid
+	iss, err := claims.GetIssuer()
+	if err != nil {
+		return nil, err
+	}
+
+	validIssuer := false
+	for _, allowed := range issuers {
+		if iss == allowed {
+			validIssuer = true
+			break
+		}
+	}
+	if !validIssuer {
+		return nil, IssuerInvalid
 	}
 
 	return claims, nil
 }
 
-func getClaims(context context.Context) (jwt.MapClaims, bool) {
-	claims, ok := context.Value(claimsKey).(jwt.MapClaims)
+func getClaims(ctx context.Context) (jwt.MapClaims, bool) {
+	claims, ok := ctx.Value(claimsKey).(jwt.MapClaims)
 	return claims, ok
+}
+
+func claimsFromMap(raw jwt.MapClaims) *Claims {
+	c := &Claims{}
+	if sub, ok := raw["sub"].(string); ok {
+		c.Sub = sub
+	}
+	return c
 }
 
 func GetUserClaims(ctx context.Context) (*Claims, bool) {
@@ -129,26 +167,7 @@ func GetUserClaims(ctx context.Context) (*Claims, bool) {
 		return nil, false
 	}
 
-	c := &Claims{}
-
-	if sub, ok := raw["sub"].(string); ok {
-		c.Sub = sub
-	}
-
-	if email, ok := raw["email"].(string); ok {
-		c.Email = email
-	}
-
-	if ra, ok := raw["realm_access"].(map[string]any); ok {
-		if roles, ok := ra["roles"].([]any); ok {
-			for _, r := range roles {
-				if role, ok := r.(string); ok {
-					c.Roles = append(c.Roles, role)
-				}
-			}
-		}
-	}
-
+	c := claimsFromMap(raw)
 	if c.Sub == "" {
 		return nil, false
 	}

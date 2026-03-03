@@ -22,22 +22,9 @@ func (server *server) mount() http.Handler {
 	handler := message.Wire()
 	healthHandler := health.NewHandler()
 
-	r.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
-	})
+	r.Use(auth.TokenAuthentication(server.idp))
 
-	r.Group(func(r chi.Router) {
-		r.Use(auth.TokenAuthentication(server.idp))
-		r.Post("/metrics", handler.CreateMessage)
-	})
-
-	r.Group(func(r chi.Router) {
-		r.Use(auth.RequireRoles("admin", "therapist"))
-		r.Post("/metrics", handler.CreateMessage)
-	})
-
+	r.Post("/metrics", handler.CreateMessage)
 	r.Get("/health", healthHandler.Health)
 
 	return r
