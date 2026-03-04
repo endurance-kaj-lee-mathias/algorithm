@@ -2,72 +2,99 @@ package application
 
 import (
 	"context"
-	"strconv"
-	"strings"
+	"errors"
+	"math"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics/domain"
 )
 
-/* (Made with chatgpt as a temporary placeholder) */
-func (s *service) ComputeStress(ctx context.Context, m domain.HealthMetric) (int, error) {
-	score := 50
+const minSamples = 12
+const epsilon = 1e-9
 
-	if m.HeartRate > 0 {
-		if m.HeartRate > 100 {
-			delta := (m.HeartRate - 100) / 2
-			if delta > 40 {
-				delta = 40
-			}
-			score += delta
-		} else if m.HeartRate < 60 {
-			delta := (60 - m.HeartRate) / 2
-			if delta > 20 {
-				delta = 20
-			}
-			score -= delta
-		}
+var NotEnoughSamples = errors.New("at least 12 samples are required")
+
+func (s *service) ComputeStress(_ context.Context, _ string, samples []domain.Sample) (domain.StressResult, error) {
+	if len(samples) < minSamples {
+		return domain.StressResult{}, NotEnoughSamples
 	}
 
-	if m.SleepTimeMinutes > 0 {
-		if m.SleepTimeMinutes < 420 {
-			delta := (420 - m.SleepTimeMinutes) / 14
-			if delta > 30 {
-				delta = 30
-			}
-			score += delta
-		} else if m.SleepTimeMinutes > 540 {
-			delta := (m.SleepTimeMinutes - 540) / 30
-			if delta > 10 {
-				delta = 10
-			}
-			score -= delta
-		}
+	hrs := make([]float64, len(samples))
+	rmssds := make([]float64, len(samples))
+
+	for i, sample := range samples {
+		hrs[i] = sample.HeartRate
+		rmssds[i] = sample.RMSSD
 	}
 
-	if bp := strings.TrimSpace(m.BloodPressure); bp != "" {
-		if before, after, ok := strings.Cut(bp, "/"); ok {
-			sysStr := strings.TrimSpace(before)
-			diaStr := strings.TrimSpace(after)
-			sys, err1 := strconv.Atoi(sysStr)
-			dia, err2 := strconv.Atoi(diaStr)
-			if err1 == nil && err2 == nil {
-				if sys >= 160 || dia >= 100 {
-					score += 40
-				} else if sys >= 140 || dia >= 90 {
-					score += 30
-				} else if sys >= 130 || dia >= 85 {
-					score += 20
-				} else if sys < 110 && dia < 70 {
-					score -= 10
-				}
-			}
-		}
+	meanHR := mean(hrs)
+	stdHR := stddev(hrs, meanHR)
+
+	meanRMSSD := mean(rmssds)
+	stdRMSSD := stddev(rmssds, meanRMSSD)
+
+	last := len(samples) - 1
+
+	zHR := zScore(samples[last].HeartRate, meanHR, stdHR)
+
+	zRMSSD := -zScore(samples[last].RMSSD, meanRMSSD, stdRMSSD)
+
+	weighted := 0.6*zHR + 0.4*zRMSSD
+
+	sleepDebt := samples[last].SleepDebtHours
+	if sleepDebt > 0 {
+		weighted += 0.1 * math.Min(sleepDebt/8.0, 1.0)
 	}
 
-	if score < 0 {
-		score = 0
-	} else if score > 100 {
-		score = 100
+	score := sigmoid(weighted) * 100
+
+	return domain.StressResult{
+		Score:    math.Round(score*10) / 10,
+		Category: categorize(score),
+		ZHR:      math.Round(zHR*100) / 100,
+		ZRMSSD:   math.Round(zRMSSD*100) / 100,
+	}, nil
+}
+
+func mean(vals []float64) float64 {
+	sum := 0.0
+	for _, v := range vals {
+		sum += v
 	}
-	return score, nil
+	return sum / float64(len(vals))
+}
+
+func stddev(vals []float64, m float64) float64 {
+	if len(vals) < 2 {
+		return 0
+	}
+
+	sum := 0.0
+	for _, v := range vals {
+		d := v - m
+		sum += d * d
+	}
+
+	return math.Sqrt(sum / float64(len(vals)-1))
+}
+
+func zScore(val, m, std float64) float64 {
+	if std < epsilon {
+		return 0
+	}
+	return (val - m) / std
+}
+
+func sigmoid(x float64) float64 {
+	return 1.0 / (1.0 + math.Exp(-x))
+}
+
+func categorize(score float64) string {
+	switch {
+	case score < 35:
+		return "Low"
+	case score < 65:
+		return "Moderate"
+	default:
+		return "High"
+	}
 }

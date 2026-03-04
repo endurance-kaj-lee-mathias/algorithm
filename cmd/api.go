@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/cmd/auth"
+	chimw "github.com/go-chi/chi/v5/middleware"
+	apimw "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/cmd/middleware"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/health"
 	message "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/algorithm/internal/metrics"
 )
@@ -15,29 +15,15 @@ import (
 func (server *server) mount() http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(time.Minute))
+	r.Use(chimw.Logger)
+	r.Use(chimw.Recoverer)
+	r.Use(chimw.Timeout(time.Minute))
+	r.Use(apimw.APIKeyAuth(server.config.APIKey))
 
 	handler := message.Wire()
 	healthHandler := health.NewHandler()
 
-	r.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
-	})
-
-	r.Group(func(r chi.Router) {
-		r.Use(auth.TokenAuthentication(server.idp))
-		r.Post("/metrics", handler.CreateMessage)
-	})
-
-	r.Group(func(r chi.Router) {
-		r.Use(auth.RequireRoles("admin", "therapist"))
-		r.Post("/metrics", handler.CreateMessage)
-	})
-
+	r.Post("/stress/compute", handler.ComputeStress)
 	r.Get("/health", healthHandler.Health)
 
 	return r
