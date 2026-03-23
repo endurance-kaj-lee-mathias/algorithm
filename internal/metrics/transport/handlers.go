@@ -19,7 +19,7 @@ func (h *Handler) ComputeStress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if body.UserID == "" {
-		response.WriteError(w, http.StatusBadRequest, errors.New("user_id is required"))
+		response.WriteError(w, http.StatusBadRequest, errors.New("userId is required"))
 		return
 	}
 
@@ -31,7 +31,7 @@ func (h *Handler) ComputeStress(w http.ResponseWriter, r *http.Request) {
 	samples := make([]domain.Sample, len(body.Samples))
 	for i, s := range body.Samples {
 		if s.HeartRate <= 0 {
-			response.WriteError(w, http.StatusBadRequest, errors.New("each sample must have a valid heart_rate"))
+			response.WriteError(w, http.StatusBadRequest, errors.New("each sample must have a valid heartRate"))
 			return
 		}
 		if s.RMSSD <= 0 {
@@ -39,7 +39,7 @@ func (h *Handler) ComputeStress(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if s.RestingHeartRate <= 0 {
-			response.WriteError(w, http.StatusBadRequest, errors.New("each sample must have a valid resting_heart_rate"))
+			response.WriteError(w, http.StatusBadRequest, errors.New("each sample must have a valid restingHeartRate"))
 			return
 		}
 		samples[i] = domain.Sample{
